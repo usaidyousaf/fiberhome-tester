@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FiberHome Tester</title>
+    
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <link rel="manifest" href="./manifest.json">
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --success-bg: #f0fdf4;
+            --success-border: #bbf7d0;
+            --success-text: #166534;
+            --error-bg: #fef2f2;
+            --error-border: #fecaca;
+            --error-text: #991b1b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 60px 16px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 440px;
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-family: monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            outline: none;
+            transition: border-color 0.2s;
+            text-align: center;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        .result-container {
+            margin-top: 20px;
+            display: none;
+            border-radius: 10px;
+        }
+
+        .error-message {
+            background-color: var(--error-bg);
+            border: 1px solid var(--error-border);
+            color: var(--error-text);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .alert.success {
+            background-color: var(--success-bg);
+            border-color: var(--success-border);
+            color: var(--success-text);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid var(--success-border);
+            font-size: 0.95rem;
+        }
+
+        .result-row {
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 12px;
+            border-radius: 8px;
+            gap: 12px;
+        }
+
+        .output-wrapper {
+            display: flex;
+            justify-content: center;
+            background: #f1f5f9;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .output-val {
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .control-btn:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="form-group">
+        <label for="hexInput">FH Last Chars</label>
+        <input type="text" id="hexInput" placeholder="ABCDEF" maxlength="6" autocomplete="off" oninput="processHex()">
+    </div>
+    
+    <div id="resultContainer" class="result-container"></div>
+</div>
+
+<script>
+let globalCalculatedValue = "";
+let isRevealed = false;
+
+function processHex() {
+    const inputField = document.getElementById('hexInput');
+    const container = document.getElementById('resultContainer');
+    const rawInput = inputField.value.trim().toLowerCase();
+    
+    if (rawInput.length === 0) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+    
+    if (rawInput.length !== 6 || !/^[0-9a-f]{6}$/.test(rawInput)) {
+        container.innerHTML = '<div class="error-message"> </div>'; 
+        container.style.display = 'block';
+        return;
+    }
+    
+    try {
+        const hexInt = parseInt(rawInput, 16);
+        const complementInt = 0xFFFFFF - hexInt;
+        const outputHex = complementInt.toString(16).padStart(6, '0').toLowerCase();
+        
+        globalCalculatedValue = `wlan${outputHex}`;
+        renderOutput();
+        container.style.display = 'block';
+    } catch (e) {
+        container.innerHTML = '<div class="error-message">Calculation error occurred.</div>';
+        container.style.display = 'block';
+    }
+}
+
+function renderOutput() {
+    const container = document.getElementById('resultContainer');
+    const displayString = isRevealed ? globalCalculatedValue : "••••••••••";
+    const viewButtonText = isRevealed ? "Hide" : "View";
+    
+    container.innerHTML = `
+        <div class="alert success">
+            <span><strong>Target Value State:</strong></span>
+            <div class="result-row">
+                <div class="output-wrapper">
+                    <span class="output-val" id="targetOutput">${displayString}</span>
+                </div>
+                <div class="btn-group">
+                    <button class="control-btn" onclick="toggleView()">${viewButtonText}</button>
+                    <button class="control-btn" onclick="copyValue(this)">Copy</button>
+                </div>
+            </div>
+        </div>`;
+}
+
+function toggleView() {
+    isRevealed = !isRevealed;
+    renderOutput();
+}
+
+function copyValue(buttonElement) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(globalCalculatedValue).then(() => {
+            updateButton(buttonElement);
+        });
+    } else {
+        const temp = document.createElement("input");
+        temp.value = globalCalculatedValue;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        updateButton(buttonElement);
+    }
+}
+
+function updateButton(btn) {
+    btn.innerText = "Copied";
+    setTimeout(() => { btn.innerText = "Copy"; }, 2000);
+}
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+        });
+    });
+}
+</script>
+
+</body>
+</html>
